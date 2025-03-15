@@ -1,0 +1,93 @@
+{
+  "editor.formatOnSave": false,
+  "files.insertFinalNewline": true,
+  "javascript.updateImportsOnFileMove.enabled": "always",
+  "[javascript]": {
+    "editor.defaultFormatter": "dbaeumer.vscode-eslint"
+  },
+  "[typescript]": {
+    "editor.defaultFormatter": "dbaeumer.vscode-eslint",
+    "editor.autoClosingBrackets": "always"
+  },
+  "[markdown]": {
+    "editor.defaultFormatter": "vscode.markdown-language-features"
+  },
+  "[scss]": {
+    "editor.defaultFormatter": "stylelint.vscode-stylelint"
+  },
+  "[json]": {
+    "editor.defaultFormatter": "vscode.json-language-features"
+  },
+  "[jsonc]": {
+    "editor.defaultFormatter": "vscode.json-language-features"
+  },
+  "[vue]": {
+    "editor.defaultFormatter": "rvest.vs-code-prettier-eslint"
+  },
+  "volar.preview.port": 3000,
+  "volar.completion.preferredTagNameCase": "pascal",
+  "eslint.options": {},
+  "editor.codeActionsOnSave": {
+    "source.fixAll.eslint": "explicit",
+    "source.fixAll.stylelint": "explicit",
+    "source.organizeImports": "explicit"
+  },
+  "eslint.format.enable": true,
+  "stylelint.packageManager": "pnpm",
+  "stylelint.validate": [
+    "css",
+    "scss",
+    "vue"
+  ],
+  "cSpell.words": [
+    "Composables",
+    "Customizer",
+    "destr",
+    "flagpack",
+    "Iconify",
+    "ofetch",
+    "psudo",
+    "stylelint",
+    "touchless",
+    "triggerer",
+    "vuetify",
+    "nuxt"
+  ],
+  "commentAnchors.tags.anchors": {
+    "ℹ️": {
+      "scope": "hidden",
+      "highlightColor": "#3498DB",
+      "styleComment": true,
+      "isItalic": false
+    },
+    "👉": {
+      "scope": "file",
+      "highlightColor": "#98C379",
+      "styleComment": true,
+      "isItalic": false
+    },
+    "❗": {
+      "scope": "hidden",
+      "highlightColor": "#FF2D00",
+      "styleComment": true,
+      "isItalic": false
+    }
+  },
+  "highlight.regexFlags": "gi",
+  "highlight.regexes": {
+    "(100vh|translate|margin:|padding:|margin-left|margin-right|rotate|text-align|border-top|border-right|border-bottom|border-left|float|background-position|transform|width|height|top|left|bottom|right|float|clear|(p|m)(l|r)-|border-(start|end)-(start|end)-radius)": [
+      {
+        "borderWidth": "1px",
+        "borderColor": "#FF6347",
+        "borderStyle": "solid"
+      }
+    ],
+    "(overflow-x:|overflow-y:)": [
+      {
+        "borderWidth": "1px",
+        "borderColor": "#008000",
+        "borderStyle": "solid"
+      }
+    ]
+  }
+}
