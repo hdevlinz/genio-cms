@@ -6,13 +6,13 @@ export default [
   //   action: 'public',
   //   subject: 'public',
   // },
-  // {
-  //   title: 'Channels',
-  //   icon: { icon: 'ri-wechat-channels-line' },
-  //   to: { name: 'channels' },
-  //   action: 'public',
-  //   subject: 'public',
-  // },
+  {
+    title: 'Channels',
+    icon: { icon: 'ri-wechat-channels-line' },
+    to: { name: 'channels' },
+    action: 'public',
+    subject: 'public',
+  },
   {
     title: 'Articles',
     icon: { icon: 'ri-archive-drawer-line' },

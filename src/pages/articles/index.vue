@@ -10,6 +10,8 @@ definePage({
   },
 })
 
+const router = useRouter()
+
 const articleHeaders = [
   { title: '#', key: 'index', sortable: false, width: '3.125rem' },
   { title: 'Title', key: 'title', sortable: false },
@@ -19,8 +21,8 @@ const articleHeaders = [
   { title: 'Updated At', key: 'updated_at', sortable: true },
 ]
 
-const channelArticles = ref<ArticleList>([])
-const totalChannelArticles = ref(0)
+const articles = ref<ArticleList>([])
+const totalArticles = ref(0)
 const articlePage = ref(1)
 const articleSize = ref(10)
 const articleSearchQuery = ref('')
@@ -42,17 +44,21 @@ const handleFetchChannelArticles = async () => {
   }))
 
   if (data.value && data.value.items) {
-    channelArticles.value = data.value.items.map((item: ArticleViewModel, index: number) => ({
+    articles.value = data.value.items.map((item: ArticleViewModel, index: number) => ({
       ...item,
       index: (articlePage.value - 1) * articleSize.value + index + 1,
     }))
-    totalChannelArticles.value = data.value.total
+    totalArticles.value = data.value.total
   }
 }
 
 const handleSearchArticles = () => {
   handleFetchChannelArticles()
   articleCancelNextFetch.value = true
+}
+
+const handleClickArticle = (event: any, row: any) => {
+  router.push({ name: 'articles-id', params: { id: row.item.id } })
 }
 
 watch([articlePage, articleSize, articleSearchQuery], handleFetchChannelArticles, { immediate: true })
@@ -82,9 +88,10 @@ watch([articlePage, articleSize, articleSearchQuery], handleFetchChannelArticles
           v-model:items-per-page="articleSize"
           v-model:page="articlePage"
           :headers="articleHeaders"
-          :items="channelArticles"
-          :items-length="totalChannelArticles"
+          :items="articles"
+          :items-length="totalArticles"
           class="text-no-wrap rounded-0"
+          @click:row="handleClickArticle"
         >
           <template #item.content="{ item }">
             {{ truncateString(item.content, 66) }}
@@ -95,6 +102,7 @@ watch([articlePage, articleSize, articleSearchQuery], handleFetchChannelArticles
               :href="item.original_url"
               target="_blank"
               rel="noopener noreferrer"
+              @click="(event) => event.stopPropagation()"
             >
               {{ item.original_url }}
             </a>
@@ -121,7 +129,7 @@ watch([articlePage, articleSize, articleSearchQuery], handleFetchChannelArticles
                 />
               </div>
               <p class="d-flex align-center text-base text-high-emphasis me-2 mb-0">
-                {{ paginationMeta({ page: articlePage, itemsPerPage: articleSize }, totalChannelArticles) }}
+                {{ paginationMeta({ page: articlePage, itemsPerPage: articleSize }, totalArticles) }}
               </p>
               <div class="d-flex gap-x-2 align-center me-2">
                 <VBtn
@@ -139,8 +147,8 @@ watch([articlePage, articleSize, articleSearchQuery], handleFetchChannelArticles
                   density="comfortable"
                   variant="text"
                   color="high-emphasis"
-                  :disabled="articlePage >= Math.ceil(totalChannelArticles / articleSize)"
-                  @click="articlePage = Math.min(Math.ceil(totalChannelArticles / articleSize), articlePage + 1)"
+                  :disabled="articlePage >= Math.ceil(totalArticles / articleSize)"
+                  @click="articlePage = Math.min(Math.ceil(totalArticles / articleSize), articlePage + 1)"
                 />
               </div>
             </div>

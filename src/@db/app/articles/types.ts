@@ -24,12 +24,4 @@ export interface ArticleDetail {
   channel: ChannelDetail
 }
 
-// export interface CreateArticle {
-//   channel_id: string
-//   title: string
-//   content: string
-//   original_url: string
-//   images: string[]
-// }
-
 export type ArticleList = ArticleViewModel[]

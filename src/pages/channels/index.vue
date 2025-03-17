@@ -1,70 +1,74 @@
 <script setup lang="ts">
-import type { VideoList, VideoViewModel } from '@/@db/app/videos/types'
-import { VideoStatusMapping } from '@/@db/enums'
+import type { ChannelList, ChannelViewModel } from '@/@db/app/channels/types'
+import AddEditChannelDrawer from '@/views/apps/channels/AddEditChannelDrawer.vue'
 
 definePage({
   meta: {
     public: true,
 
-    // subject: 'news.videos',
+    // subject: 'news.channels',
     // action: 'read',
   },
 })
 
-const router = useRouter()
+const isAddEditChannelDrawerVisible = ref(false)
+const selectedChannel = ref<ChannelViewModel | null>(null)
 
-const isAddVideoDialogVisible = ref(false)
-
-const videoHeaders = [
+const articleHeaders = [
   { title: '#', key: 'index', sortable: false, width: '3.125rem' },
-  { title: 'Title', key: 'title', sortable: false },
-  { title: 'Description', key: 'description', sortable: false },
-  { title: 'Status', key: 'status', sortable: false },
+  { title: 'Name', key: 'name', sortable: false },
+  { title: 'Category', key: 'category', sortable: false },
   { title: 'Created At', key: 'created_at', sortable: true },
   { title: 'Updated At', key: 'updated_at', sortable: true },
 ]
 
-const videos = ref<VideoList>([])
-const totalVideos = ref(0)
-const videoPage = ref(1)
-const videoSize = ref(10)
-const videoSearchQuery = ref('')
-const videoCancelNextFetch = ref(false)
+const channels = ref<ChannelList>([])
+const totalChannels = ref(0)
+const channelPage = ref(1)
+const channelSize = ref(10)
+const channelSearchQuery = ref('')
+const channelCancelNextFetch = ref(false)
 
-const handleFetchVideos = async () => {
-  if (videoCancelNextFetch.value) {
-    videoCancelNextFetch.value = false
+const handleFetchChannels = async () => {
+  if (channelCancelNextFetch.value) {
+    channelCancelNextFetch.value = false
 
     return
   }
 
-  const { data } = await useApi<any>(createUrl('/news/videos', {
+  const { data } = await useApi<any>(createUrl('/news/channels', {
     query: {
-      page: videoPage.value,
-      size: videoSize.value,
-      search: videoSearchQuery.value,
+      page: channelPage.value,
+      size: channelSize.value,
+      search: channelSearchQuery.value,
     },
   }))
 
   if (data.value && data.value.items) {
-    videos.value = data.value.items.map((item: VideoViewModel, index: number) => ({
+    channels.value = data.value.items.map((item: ChannelViewModel, index: number) => ({
       ...item,
-      index: (videoPage.value - 1) * videoSize.value + index + 1,
+      index: (channelPage.value - 1) * channelSize.value + index + 1,
     }))
-    totalVideos.value = data.value.total
+    totalChannels.value = data.value.total
   }
 }
 
-const handleSearchVideos = () => {
-  handleFetchVideos()
-  videoCancelNextFetch.value = true
+const handleSearchChannels = () => {
+  handleFetchChannels()
+  channelCancelNextFetch.value = true
 }
 
-const handleClickVideo = (event: any, row: any) => {
-  router.push({ name: 'videos-id', params: { id: row.item.id } })
+const handleClickChannel = (event: any, row: any) => {
+  selectedChannel.value = row.item
+  isAddEditChannelDrawerVisible.value = true
 }
 
-watch([videoPage, videoSize, videoSearchQuery], handleFetchVideos, { immediate: true })
+watch([channelPage, channelSize, channelSearchQuery], handleFetchChannels, { immediate: true })
+
+watch(() => isAddEditChannelDrawerVisible.value, val => {
+  if (!val)
+    selectedChannel.value = null
+})
 </script>
 
 <template>
@@ -76,39 +80,35 @@ watch([videoPage, videoSize, videoSearchQuery], handleFetchVideos, { immediate: 
             class="d-flex align-center flex-grow-1"
             style="max-width: 25rem; inline-size: 24.0625rem;"
           >
-            <!-- 👉 Search Videos -->
+            <!-- 👉 Search Channels -->
             <VTextField
-              v-model="videoSearchQuery"
-              placeholder="Search Videos..."
+              v-model="channelSearchQuery"
+              placeholder="Search Channels..."
               density="compact"
               class="me-4"
-              @keydown.enter="handleSearchVideos"
+              @keydown.enter="handleSearchChannels"
             />
           </div>
 
           <div class="d-flex align-center gap-4">
             <VBtn
               color="primary"
-              @click="isAddVideoDialogVisible = true"
+              @click="isAddEditChannelDrawerVisible = true"
             >
-              Create New Video
+              Create New Channel
             </VBtn>
           </div>
         </div>
 
         <VDataTableServer
-          v-model:items-per-page="videoSize"
-          v-model:page="videoPage"
-          :headers="videoHeaders"
-          :items="videos"
-          :items-length="totalVideos"
+          v-model:items-per-page="channelSize"
+          v-model:page="channelPage"
+          :headers="articleHeaders"
+          :items="channels"
+          :items-length="totalChannels"
           class="text-no-wrap rounded-0"
-          @click:row="handleClickVideo"
+          @click:row="handleClickChannel"
         >
-          <template #item.description="{ item }">
-            {{ truncateString(item.description, 66) }}
-          </template>
-
           <template #item.created_at="{ item }">
             {{ formatDateToTimeAgoString(item.created_at) }}
           </template>
@@ -117,26 +117,20 @@ watch([videoPage, videoSize, videoSearchQuery], handleFetchVideos, { immediate: 
             {{ formatDateToTimeAgoString(item.updated_at) }}
           </template>
 
-          <template #item.status="{ item }">
-            <VChip :color="VideoStatusMapping[item.status].color">
-              {{ VideoStatusMapping[item.status].label }}
-            </VChip>
-          </template>
-
           <template #bottom>
             <VDivider />
             <div class="d-flex justify-end flex-wrap gap-x-6 px-2 py-1">
               <div class="d-flex align-center gap-x-2 text-medium-emphasis text-base">
                 Rows Per Page:
                 <VSelect
-                  v-model="videoSize"
+                  v-model="channelSize"
                   class="per-page-select"
                   variant="plain"
                   :items="[10, 20, 25, 50, 100]"
                 />
               </div>
               <p class="d-flex align-center text-base text-high-emphasis me-2 mb-0">
-                {{ paginationMeta({ page: videoPage, itemsPerPage: videoSize }, totalVideos) }}
+                {{ paginationMeta({ page: channelPage, itemsPerPage: channelSize }, totalChannels) }}
               </p>
               <div class="d-flex gap-x-2 align-center me-2">
                 <VBtn
@@ -145,8 +139,8 @@ watch([videoPage, videoSize, videoSearchQuery], handleFetchVideos, { immediate: 
                   variant="text"
                   density="comfortable"
                   color="high-emphasis"
-                  :disabled="videoPage <= 1"
-                  @click="videoPage = Math.max(1, videoPage - 1)"
+                  :disabled="channelPage <= 1"
+                  @click="channelPage = Math.max(1, channelPage - 1)"
                 />
                 <VBtn
                   class="flip-in-rtl"
@@ -154,8 +148,8 @@ watch([videoPage, videoSize, videoSearchQuery], handleFetchVideos, { immediate: 
                   density="comfortable"
                   variant="text"
                   color="high-emphasis"
-                  :disabled="videoPage >= Math.ceil(totalVideos / videoSize)"
-                  @click="videoPage = Math.min(Math.ceil(totalVideos / videoSize), videoPage + 1)"
+                  :disabled="channelPage >= Math.ceil(totalChannels / channelSize)"
+                  @click="channelPage = Math.min(Math.ceil(totalChannels / channelSize), channelPage + 1)"
                 />
               </div>
             </div>
@@ -164,7 +158,11 @@ watch([videoPage, videoSize, videoSearchQuery], handleFetchVideos, { immediate: 
       </vcardtext>
     </VCard>
 
-    <AddNewVideoDialog v-model:isVisible="isAddVideoDialogVisible" />
+    <AddEditChannelDrawer
+      v-model:isDrawerOpen="isAddEditChannelDrawerVisible"
+      :item-data="selectedChannel"
+      @success="handleFetchChannels"
+    />
   </section>
 </template>
 

@@ -60,6 +60,5 @@ declare module 'vue' {
     TwoFactorAuthDialog: typeof import('./src/components/dialogs/apps/TwoFactorAuthDialog.vue')['default']
     UserInfoEditDialog: typeof import('./src/components/dialogs/UserInfoEditDialog.vue')['default']
     UserUpgradePlanDialog: typeof import('./src/components/dialogs/apps/UserUpgradePlanDialog.vue')['default']
-    VideoPreviewDialog: typeof import('./src/components/dialogs/VideoPreviewDialog.vue')['default']
   }
 }

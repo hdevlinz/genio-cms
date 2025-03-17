@@ -5,31 +5,31 @@ import { VideoStatus } from '@/@db/app/videos/enums'
 import type { VideoDetail } from '@/@db/app/videos/types'
 import { VideoStatusMapping } from '@/@db/enums'
 
-interface Props {
-  isVisible: boolean
-  videoId?: string | null
-  workspaceId?: string | null
-  channelId?: string | null
-}
+definePage({
+  meta: {
+    public: true,
 
-interface Emit {
-  (e: 'update:isVisible', value: boolean): void
-}
+    // subject: 'news.videos',
+    // action: 'read',
+  },
+})
 
-const props = defineProps<Props>()
-const emit = defineEmits<Emit>()
+const router = useRouter()
+const route = useRoute('videos-id')
 
-const isPreviewDialogVisible = ref(props.isVisible)
-const videoDetails = ref<VideoDetail | null>(null)
 const isLoading = ref(false)
+const videoDetail = ref<VideoDetail | null>(null)
 
-const handleFetchVideoDetails = async () => {
+const handleFetchVideoDetail = async () => {
+  if (!route.params.id)
+    return
+
   isLoading.value = true
   try {
-    const { data } = await useApi<any>(createUrl(`/news/videos/${props.videoId}`))
+    const { data } = await useApi<any>(createUrl(`/news/videos/${route.params.id}`))
 
     if (data.value)
-      videoDetails.value = data.value
+      videoDetail.value = data.value
   }
   finally {
     isLoading.value = false
@@ -37,57 +37,46 @@ const handleFetchVideoDetails = async () => {
 }
 
 const handleDownloadVideo = async () => {
-  if (videoDetails.value && videoDetails.value.result_video_url) {
-    const fileName = videoDetails.value.title?.toLocaleLowerCase().replace(/[^a-z0-9]/gi, '_').replace(/_+$/, '') || 'video'
+  if (videoDetail.value && videoDetail.value.result_video_url) {
+    const fileName = videoDetail.value.title?.toLocaleLowerCase().replace(/[^a-z0-9]/gi, '_').replace(/_+$/, '') || 'video'
 
-    download(videoDetails.value.result_video_url, `${fileName}.mp4`, 'video/mp4')
+    download(videoDetail.value.result_video_url, `${fileName}.mp4`, 'video/mp4')
   }
 }
 
-watch(isPreviewDialogVisible, newValue => emit('update:isVisible', newValue))
-
-watch(() => props.videoId, newValue => {
-  if (newValue && isPreviewDialogVisible.value)
-    handleFetchVideoDetails()
-})
-
-watch(() => props.isVisible, newValue => {
-  isPreviewDialogVisible.value = newValue
-  if (newValue)
-    handleFetchVideoDetails()
-  else
-    videoDetails.value = null
-})
+watch(() => route.params.id, handleFetchVideoDetail, { immediate: true })
 </script>
 
 <template>
-  <VDialog
-    v-model="isPreviewDialogVisible"
-    width="1200"
-    class="video-preview-dialog"
-  >
+  <div>
     <VCard
       class="pa-4"
       flat
     >
-      <VCardTitle class="preview-card-title">
-        Video Preview
-        <div class="dialog-actions">
+      <VCardTitle class="v-card-title">
+        Video Detail
+        <div>
           <VBtn
-            v-if="videoDetails?.status === VideoStatus.COMPLETED"
+            color="secondary"
+            variant="outlined"
+            class="me-2"
+            @click="() => router.back()"
+          >
+            Back
+          </VBtn>
+          <VBtn
+            v-if="videoDetail?.status === VideoStatus.COMPLETED"
             color="primary"
-            tooltip="Download Video"
-            location="bottom"
             @click="handleDownloadVideo"
           >
-            Download
+            Download Video
           </VBtn>
         </div>
       </VCardTitle>
 
       <VCardText
-        v-if="videoDetails"
-        class="preview-card-text"
+        v-if="videoDetail"
+        class="v-card-text"
       >
         <VRow>
           <VCol
@@ -104,7 +93,7 @@ watch(() => props.isVisible, newValue => {
                   Title
                 </VListItemTitle>
                 <VListItemSubtitle class="list-item-subtitle">
-                  {{ videoDetails.title || 'N/A' }}
+                  {{ videoDetail.title || 'N/A' }}
                 </VListItemSubtitle>
               </VListItem>
 
@@ -113,7 +102,7 @@ watch(() => props.isVisible, newValue => {
                   Channel
                 </VListItemTitle>
                 <VListItemSubtitle class="list-item-subtitle">
-                  {{ videoDetails.channel?.category || 'N/A' }}
+                  {{ videoDetail.channel?.category || 'N/A' }}
                 </VListItemSubtitle>
               </VListItem>
 
@@ -122,7 +111,7 @@ watch(() => props.isVisible, newValue => {
                   Description
                 </VListItemTitle>
                 <VListItemSubtitle class="list-item-subtitle">
-                  {{ videoDetails.description || 'N/A' }}
+                  {{ videoDetail.description || 'N/A' }}
                 </VListItemSubtitle>
               </VListItem>
 
@@ -131,7 +120,7 @@ watch(() => props.isVisible, newValue => {
                   Creation Date
                 </VListItemTitle>
                 <VListItemSubtitle class="list-item-subtitle">
-                  {{ formatDateToTimeAgoString(videoDetails.created_at) }}
+                  {{ formatDateToTimeAgoString(videoDetail.created_at) }}
                 </VListItemSubtitle>
               </VListItem>
 
@@ -141,16 +130,16 @@ watch(() => props.isVisible, newValue => {
                 </VListItemTitle>
                 <VListItemSubtitle class="list-item-subtitle">
                   <VChip
-                    :color="VideoStatusMapping[videoDetails.status]?.color || 'grey'"
+                    :color="VideoStatusMapping[videoDetail.status]?.color || 'grey'"
                     rounded="lg"
                   >
-                    {{ VideoStatusMapping[videoDetails.status]?.label || 'Unknown' }}
+                    {{ VideoStatusMapping[videoDetail.status]?.label || 'Unknown' }}
                   </VChip>
                 </VListItemSubtitle>
               </VListItem>
 
               <VListItem
-                v-if="videoDetails.result_video_url"
+                v-if="videoDetail.result_video_url"
                 class="list-item"
               >
                 <VListItemTitle class="list-item-title">
@@ -158,12 +147,12 @@ watch(() => props.isVisible, newValue => {
                 </VListItemTitle>
                 <VListItemSubtitle class="list-item-subtitle">
                   <a
-                    :href="videoDetails.result_video_url"
+                    :href="videoDetail.result_video_url"
                     target="_blank"
                     rel="noopener noreferrer"
                     class="video-url-link"
                   >
-                    {{ videoDetails.result_video_url }}
+                    {{ videoDetail.result_video_url }}
                     <VIcon
                       size="small"
                       icon="ri-external-link-line"
@@ -184,10 +173,10 @@ watch(() => props.isVisible, newValue => {
 
             <div class="video-preview-container">
               <video
-                v-if="videoDetails.result_video_url"
+                v-if="videoDetail.result_video_url"
                 controls
                 class="video-preview"
-                :src="videoDetails.result_video_url"
+                :src="videoDetail.result_video_url"
               />
 
               <div
@@ -206,9 +195,9 @@ watch(() => props.isVisible, newValue => {
           Articles
         </h6>
 
-        <div v-if="videoDetails.articles && videoDetails.articles.length > 0">
+        <div v-if="videoDetail.articles && videoDetail.articles.length > 0">
           <VCard
-            v-for="article in videoDetails.articles"
+            v-for="article in videoDetail.articles"
             :key="article.id"
             variant="tonal"
             class="article-preview-card"
@@ -248,119 +237,117 @@ watch(() => props.isVisible, newValue => {
         </div>
       </VCardText>
 
-      <VCardText v-else-if="!isLoading && !videoDetails">
+      <VCardText v-else-if="!isLoading && !videoDetail">
         <div class="no-preview">
-          <span>No video details available</span>
+          <span>No video detail available</span>
         </div>
       </VCardText>
 
       <VCardText
         v-if="isLoading"
-        class="loading-text"
+        class="loading-text mt-6 text-center d-flex align-center justify-center w-100 h-100"
       >
         <VProgressCircular
-          indeterminate
           color="primary"
           class="me-2"
+          indeterminate
         />
-        Loading
+        Loading...
       </VCardText>
     </VCard>
-  </VDialog>
+  </div>
 </template>
 
 <style lang="scss" scoped>
-.video-preview-dialog {
-  .preview-card-title {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding-bottom: 1rem;
-    border-bottom: 0.0625rem solid #e0e0e0;
-    font-size: 1.25rem;
-    font-weight: 500;
-  }
+.v-card-title {
+   display: flex;
+   justify-content: space-between;
+   align-items: center;
+   padding-bottom: 1rem;
+   border-bottom: 0.0625rem solid #e0e0e0;
+   font-size: 1.25rem;
+   font-weight: 500;
+}
 
-  .preview-card-text {
-    padding-top: 1.5rem;
-  }
+.v-card-text {
+   padding-top: 1.5rem;
+}
 
-  .section-title {
-    font-size: 1rem;
-    font-weight: 500;
-    margin-top: 1rem;
-  }
+.section-title {
+   font-size: 1rem;
+   font-weight: 500;
+   margin-top: 1rem;
+}
 
-  .list-item {
-    padding: 0 !important;
+.list-item {
+   padding: 0 !important;
 
-    .list-item-title {
-      font-weight: bold;
-    }
+   .list-item-title {
+   font-weight: bold;
+   }
 
-    .list-item-subtitle {
-      color: var(--v-theme-text-base);
-    }
-  }
+   .list-item-subtitle {
+   color: var(--v-theme-text-base);
+   }
+}
 
-  .video-url-link, .article-url-link {
-    text-decoration: none;
-    display: inline-flex;
-    align-items: center;
+.video-url-link, .article-url-link {
+   text-decoration: none;
+   display: inline-flex;
+   align-items: center;
 
-    &:hover {
-      text-decoration: underline;
-    }
-  }
+   &:hover {
+   text-decoration: underline;
+   }
+}
 
-  .video-preview-container {
-    position: relative;
-    border-radius: 0.5rem;
-    overflow: hidden;
+.video-preview-container {
+   position: relative;
+   border-radius: 0.5rem;
+   overflow: hidden;
 
-    .video-preview {
-      width: 100%;
-      aspect-ratio: 16 / 9;
-    }
-  }
+   .video-preview {
+   width: 100%;
+   aspect-ratio: 16 / 9;
+   }
+}
 
-  .image-previews {
-    display: flex;
-    gap: 0.5rem;
-    overflow-x: auto;
-    padding-top: 0.5rem;
-  }
+.image-previews {
+   display: flex;
+   gap: 0.5rem;
+   overflow-x: auto;
+   padding-top: 0.5rem;
+}
 
-  .image-preview-item {
-    border-radius: 0.5rem;
-  }
+.image-preview-item {
+   border-radius: 0.5rem;
+}
 
-  .no-preview, .no-articles, .loading-text {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    height: 15.625rem;
-    border-radius: 0.5rem;
-    color: #777;
-  }
+.no-preview, .no-articles, .loading-text {
+   display: flex;
+   justify-content: center;
+   align-items: center;
+   height: 15.625rem;
+   border-radius: 0.5rem;
+   color: #777;
+}
 
-  .article-preview-card {
-    margin-bottom: 1rem;
-    border-radius: 0.5rem;
+.article-preview-card {
+   margin-bottom: 1rem;
+   border-radius: 0.5rem;
 
-    .v-card-item {
-      padding: 1.25rem;
-    }
+   .v-card-item {
+   padding: 1.25rem;
+   }
 
-    .article-card-title {
-      font-weight: 500;
-      margin-bottom: 0.5rem;
-    }
+   .article-card-title {
+   font-weight: 500;
+   margin-bottom: 0.5rem;
+   }
 
-    .article-card-text {
-      color: var(--v-theme-text-base);
-      padding: 0 !important;
-    }
-  }
+   .article-card-text {
+   color: var(--v-theme-text-base);
+   padding: 0 !important;
+   }
 }
 </style>

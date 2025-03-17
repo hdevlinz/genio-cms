@@ -1,7 +1,7 @@
 export const VideoStatusMapping = {
-  DRAFT: { label: 'Draft', color: '#8884d8' },
-  PENDING: { label: 'Pending', color: '#ff9800' },
-  PROCESSING: { label: 'Processing', color: '#2196f3' },
-  COMPLETED: { label: 'Completed', color: '#4caf50' },
-  FAILED: { label: 'Failed', color: '#f44336' },
+  draft: { label: 'Draft', color: '#8884d8' },
+  pending: { label: 'Pending', color: '#ff9800' },
+  processing: { label: 'Processing', color: '#2196f3' },
+  completed: { label: 'Completed', color: '#4caf50' },
+  failed: { label: 'Failed', color: '#f44336' },
 }

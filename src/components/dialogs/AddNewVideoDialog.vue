@@ -37,8 +37,6 @@ const videoForm = ref<NewVideoForm>({
 })
 
 const handleCreateVideo = async () => {
-  console.log(videoForm.value.articles.map(article => article.images.map(image => image.name)))
-
   const { response } = await useApi<any>(createUrl('/news/generate/files')).post(videoForm.value)
 
   if (response.value?.ok)

@@ -5,6 +5,7 @@ import 'prismjs'
 import 'prismjs/themes/prism-tomorrow.css'
 import 'vanilla-jsoneditor/themes/jse-theme-dark.css'
 import 'vue-json-pretty/lib/styles.css'
+import 'vue3-carousel/carousel.css'
 import 'vue3-toastify/dist/index.css'
 
 import { useTheme } from 'vuetify'

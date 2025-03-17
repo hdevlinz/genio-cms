@@ -1,7 +1,7 @@
 export enum VideoStatus {
-  DRAFT = 'DRAFT',
-  PENDING = 'PENDING',
-  PROCESSING = 'PROCESSING',
-  COMPLETED = 'COMPLETED',
-  FAILED = 'FAILED',
+  DRAFT = 'draft',
+  PENDING = 'pending',
+  PROCESSING = 'processing',
+  COMPLETED = 'completed',
+  FAILED = 'failed',
 }
