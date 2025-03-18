@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import type { ArticleList, ArticleViewModel } from '@/@db/app/articles/types'
+import type { ArticleList, ArticleViewModel } from '@/@db/apps/articles/types'
+import { OrderByMapping } from '@/@db/enums'
 
 definePage({
   meta: {
@@ -14,17 +15,18 @@ const router = useRouter()
 
 const articleHeaders = [
   { title: '#', key: 'index', sortable: false, width: '3.125rem' },
-  { title: 'Title', key: 'title', sortable: false },
   { title: 'Content', key: 'content', sortable: false },
   { title: 'Original URL', key: 'original_url', sortable: false },
+  { title: 'Published At', key: 'published_at', sortable: true },
   { title: 'Created At', key: 'created_at', sortable: true },
   { title: 'Updated At', key: 'updated_at', sortable: true },
 ]
 
-const articles = ref<ArticleList>([])
+const articleList = ref<ArticleList>([])
 const totalArticles = ref(0)
 const articlePage = ref(1)
 const articleSize = ref(10)
+const articleOrderBy = ref('-created_at')
 const articleSearchQuery = ref('')
 const articleCancelNextFetch = ref(false)
 
@@ -35,16 +37,17 @@ const handleFetchChannelArticles = async () => {
     return
   }
 
-  const { data } = await useApi<any>(createUrl('/news/articles', {
+  const { data } = await useApi<any>(createUrl('/articles', {
     query: {
       page: articlePage.value,
       size: articleSize.value,
+      order_by: articleOrderBy.value,
       search: articleSearchQuery.value,
     },
   }))
 
   if (data.value && data.value.items) {
-    articles.value = data.value.items.map((item: ArticleViewModel, index: number) => ({
+    articleList.value = data.value.items.map((item: ArticleViewModel, index: number) => ({
       ...item,
       index: (articlePage.value - 1) * articleSize.value + index + 1,
     }))
@@ -88,13 +91,20 @@ watch([articlePage, articleSize, articleSearchQuery], handleFetchChannelArticles
           v-model:items-per-page="articleSize"
           v-model:page="articlePage"
           :headers="articleHeaders"
-          :items="articles"
+          :items="articleList"
           :items-length="totalArticles"
           class="text-no-wrap rounded-0"
+          must-sort
           @click:row="handleClickArticle"
+          @update:sort-by="(event) => {
+            if (!isEmptyArray(event)) {
+              const { key, order } = event[0]
+              articleOrderBy = `${OrderByMapping[order as keyof typeof OrderByMapping]}${key}`
+            }
+          }"
         >
           <template #item.content="{ item }">
-            {{ truncateString(item.content, 66) }}
+            {{ item.content ? truncateString(item.content, 66) : '-' }}
           </template>
 
           <template #item.original_url="{ item }">
@@ -106,6 +116,10 @@ watch([articlePage, articleSize, articleSearchQuery], handleFetchChannelArticles
             >
               {{ item.original_url }}
             </a>
+          </template>
+
+          <template #item.published_at="{ item }">
+            {{ formatDateToTimeAgoString(item.published_at) }}
           </template>
 
           <template #item.created_at="{ item }">

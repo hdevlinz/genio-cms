@@ -1,8 +1,12 @@
 <script setup lang="ts">
+import { toast } from 'vue3-toastify'
 import Draggable from 'vuedraggable'
+import { VForm } from 'vuetify/components/VForm'
 
-import { VideoStatus } from '@/@db/app/videos/enums'
-import type { NewVideoForm } from '@/@db/app/videos/types'
+import type { ArticleViewModel, CreateArticleForm } from '@/@db/apps/articles/types'
+import type { BackgroundVideoViewModel } from '@/@db/apps/materials/types'
+import { VideoStatus } from '@/@db/apps/videos/enums'
+import type { CreateVideoForm } from '@/@db/apps/videos/types'
 
 interface Props {
   isVisible: boolean
@@ -10,8 +14,10 @@ interface Props {
 
 interface Emit {
   (e: 'update:isVisible', value: boolean): void
+  (e: 'success'): void
 }
 
+// const { global } = useTheme()
 const props = defineProps<Props>()
 const emit = defineEmits<Emit>()
 const { URL } = window
@@ -20,39 +26,116 @@ const isAddVideoDialogVisible = ref(props.isVisible)
 const isBulkAddArticlesDialogOpen = ref(false)
 const isImagePreviewVisible = ref(false)
 const isDragging = ref(false)
+const refVForm = ref<VForm | null>(null)
 
 const bulkAddTextareaContent = ref('')
 const bulkAddError = ref('')
 const previewImageUrl = ref('')
 const imageZoomScale = ref(1)
 
-const videoForm = ref<NewVideoForm>({
+const videoForm = ref<CreateVideoForm>({
+  article_ids: [],
+  background_video_ids: null,
+  name: null,
   status: VideoStatus.DRAFT,
-  articles: [{
-    title: '',
-    content: '',
-    original_url: '',
-    images: [],
-  }],
+  language: null,
+  topic: null,
+  context: null,
 })
 
-const handleCreateVideo = async () => {
-  const { response } = await useApi<any>(createUrl('/news/generate/files')).post(videoForm.value)
-
-  if (response.value?.ok)
-    isAddVideoDialogVisible.value = false
-}
+const newArticles = ref<CreateArticleForm[]>([])
 
 const resetVideoForm = () => {
   videoForm.value = {
+    article_ids: [],
+    background_video_ids: null,
+    name: null,
     status: VideoStatus.DRAFT,
-    articles: [{
-      title: '',
-      content: '',
-      original_url: '',
-      images: [],
-    }],
+    language: null,
+    topic: null,
+    context: null,
   }
+}
+
+const handleCreateVideo = async () => {
+  const validationResult = await refVForm.value?.validate()
+  const valid = validationResult?.valid ?? false
+  if (!valid) {
+    toast.error('Please fill in all required fields.')
+
+    return
+  }
+
+  const newArticleIds: string[] = []
+
+  const articleCreationPromises = newArticles.value.map(async article => {
+    const formData = new FormData()
+
+    formData.append('article_data', JSON.stringify({
+      original_url: article.original_url,
+      published_at: article.published_at,
+    }))
+    article.images.forEach(image => formData.append('image_files', image))
+
+    const { data } = await useApi<any>(createUrl('/articles')).post(formData)
+
+    return data.value
+  })
+
+  try {
+    const articleCreationResults = await Promise.all(articleCreationPromises)
+
+    articleCreationResults.forEach(articleData => {
+      if (articleData && articleData.id)
+        newArticleIds.push(articleData.id)
+    })
+
+    console.log('All articles created. New Article IDs:', newArticleIds)
+
+    videoForm.value.article_ids = [...videoForm.value.article_ids, ...newArticleIds]
+
+    const cleanedVideoFormPayload = removeEmptyValues(videoForm.value)
+
+    const { response } = await useApi<any>(createUrl('/videos')).post(cleanedVideoFormPayload)
+
+    if (response.value?.ok) {
+      isAddVideoDialogVisible.value = false
+      emit('success')
+    }
+  }
+  catch (error) {
+    console.error('Error creating articles:', error)
+  }
+}
+
+const articlesAutoComplete = ref<ArticleViewModel[]>([])
+const articleAutoCompleteSearch = ref('')
+
+const handleFetchArticlesAutoComplete = async () => {
+  const { data } = await useApi<any>(createUrl('/articles', {
+    query: {
+      size: 100,
+      search: articleAutoCompleteSearch.value === '' ? undefined : articleAutoCompleteSearch.value,
+    },
+  }))
+
+  if (data.value && data.value.items)
+    articlesAutoComplete.value = data.value.items
+}
+
+const backgroundVideosAutoComplete = ref<BackgroundVideoViewModel[]>([])
+const backgroundVideoAutoCompleteSearch = ref('')
+
+const handleFetchBackgroundVideosAutoComplete = async () => {
+  const { data } = await useApi<any>(createUrl('/materials/background-videos', {
+    query: {
+      size: 100,
+      search: backgroundVideoAutoCompleteSearch.value === '' ? undefined : backgroundVideoAutoCompleteSearch.value,
+    },
+  }))
+
+  if (data.value && data.value.items)
+    backgroundVideosAutoComplete.value = data.value.items
 }
 
 const handleJumpToArticle = (index: number) => {
@@ -63,14 +146,13 @@ const handleJumpToArticle = (index: number) => {
 }
 
 const handleAddArticle = async () => {
-  videoForm.value.articles.push({
-    title: '',
-    content: '',
+  newArticles.value.push({
     original_url: '',
+    published_at: null,
     images: [],
   })
 
-  await nextTick(() => handleJumpToArticle(videoForm.value.articles.length - 1))
+  await nextTick(() => handleJumpToArticle(newArticles.value.length - 1))
 }
 
 const handleBulkAddArticles = async () => {
@@ -88,31 +170,30 @@ const handleBulkAddArticles = async () => {
 
   if (bulkAddError.value === '') {
     validUrls.forEach(url => {
-      videoForm.value.articles.push({
-        title: '',
-        content: '',
+      newArticles.value.push({
         original_url: url,
+        published_at: null,
         images: [],
       })
     })
     isBulkAddArticlesDialogOpen.value = false
     bulkAddTextareaContent.value = ''
 
-    await nextTick(() => handleJumpToArticle(videoForm.value.articles.length - 1))
+    await nextTick(() => handleJumpToArticle(newArticles.value.length - 1))
   }
 }
 
 const handleRemoveArticle = (index: number) => {
-  if (videoForm.value.articles.length > 1)
-    videoForm.value.articles.splice(index, 1)
+  if (newArticles.value.length > 1)
+    newArticles.value.splice(index, 1)
 }
 
 const handleImagesChange = (articleIndex: number, files: File[]) => {
-  videoForm.value.articles[articleIndex].images = [...videoForm.value.articles[articleIndex].images, ...files]
+  newArticles.value[articleIndex].images = [...newArticles.value[articleIndex].images, ...files]
 }
 
 const handleRemoveImage = (articleIndex: number, imageIndex: number) => {
-  videoForm.value.articles[articleIndex].images.splice(imageIndex, 1)
+  newArticles.value[articleIndex].images.splice(imageIndex, 1)
 }
 
 const openImageViewer = (imageUrl: string) => {
@@ -138,7 +219,12 @@ const handleImageWheelZoom = (event: WheelEvent) => {
   imageZoomScale.value = Math.max(0.5, Math.min(imageZoomScale.value, 5)) // Zoom between 50% and 500%
 }
 
-watch(isAddVideoDialogVisible, newValue => emit('update:isVisible', newValue))
+watch(isAddVideoDialogVisible, newValue => {
+  emit('update:isVisible', newValue)
+
+  if (!newValue)
+    resetVideoForm()
+})
 
 watch(isBulkAddArticlesDialogOpen, newValue => {
   if (!newValue) {
@@ -149,9 +235,6 @@ watch(isBulkAddArticlesDialogOpen, newValue => {
 
 watch(() => props.isVisible, newValue => {
   isAddVideoDialogVisible.value = newValue
-
-  if (!newValue)
-    resetVideoForm()
 })
 </script>
 
@@ -187,8 +270,53 @@ watch(() => props.isVisible, newValue => {
       </VCardTitle>
 
       <VCardText>
-        <VForm @submit.prevent="handleCreateVideo">
+        <VForm
+          ref="refVForm"
+          @submit.prevent="handleCreateVideo"
+        >
           <VRow>
+            <VCol cols="12">
+              <p class="text-subtitle-1 font-weight-bold mb-2">
+                Name:
+              </p>
+
+              <VTextField
+                v-model="videoForm.name"
+                label="Name (Optional)"
+                placeholder="Name"
+                variant="outlined"
+                class="mb-3"
+              />
+            </VCol>
+
+            <VCol cols="6">
+              <p class="text-subtitle-1 font-weight-bold mb-2">
+                Language:
+              </p>
+
+              <VTextField
+                v-model="videoForm.language"
+                label="Language (Optional)"
+                placeholder="Language"
+                variant="outlined"
+                class="mb-3"
+              />
+            </VCol>
+
+            <VCol cols="6">
+              <p class="text-subtitle-1 font-weight-bold mb-2">
+                Topic:
+              </p>
+
+              <VTextField
+                v-model="videoForm.topic"
+                label="Topic (Optional)"
+                placeholder="Topic"
+                variant="outlined"
+                class="mb-3"
+              />
+            </VCol>
+
             <VCol cols="12">
               <p class="text-subtitle-1 font-weight-bold mb-2">
                 Status:
@@ -208,6 +336,42 @@ watch(() => props.isVisible, newValue => {
                   :value="VideoStatus.PENDING"
                 />
               </VRadioGroup>
+            </VCol>
+
+            <VCol cols="6">
+              <VAutocomplete
+                v-model="videoForm.article_ids"
+                v-model:search="articleAutoCompleteSearch"
+                :items="articlesAutoComplete"
+                item-title="original_url"
+                item-value="id"
+                label="Existing Articles"
+                placeholder="Existing Articles"
+                multiple
+                chips
+                closable-chips
+                clear-on-select
+                no-data-text="No articles available"
+                @focus="handleFetchArticlesAutoComplete"
+              />
+            </VCol>
+
+            <VCol cols="6">
+              <VAutocomplete
+                v-model="videoForm.background_video_ids"
+                v-model:search="backgroundVideoAutoCompleteSearch"
+                :items="backgroundVideosAutoComplete"
+                item-title="name"
+                item-value="id"
+                label="Existing Background Videos"
+                placeholder="Existing Background Videos"
+                multiple
+                chips
+                closable-chips
+                clear-on-select
+                no-data-text="No background videos available"
+                @focus="handleFetchBackgroundVideosAutoComplete"
+              />
             </VCol>
 
             <VCol
@@ -245,7 +409,7 @@ watch(() => props.isVisible, newValue => {
               </div>
 
               <VCard
-                v-for="(article, articleIndex) in videoForm.articles"
+                v-for="(article, articleIndex) in newArticles"
                 :id="`article-${articleIndex}`"
                 :key="articleIndex"
                 flat
@@ -254,7 +418,7 @@ watch(() => props.isVisible, newValue => {
                 <VCardTitle class="article-card-title">
                   Article #{{ articleIndex + 1 }}
                   <VBtn
-                    v-if="videoForm.articles.length > 1"
+                    v-if="newArticles.length > 1"
                     color="error"
                     variant="text"
                     icon="ri-delete-bin-line"
@@ -265,27 +429,33 @@ watch(() => props.isVisible, newValue => {
                 </VCardTitle>
 
                 <VCardText>
-                  <VTextField
-                    v-model="article.original_url"
-                    label="Original URL"
-                    variant="outlined"
-                    class="mb-3"
-                  />
+                  <VRow>
+                    <VCol cols="12">
+                      <VTextField
+                        v-model="article.original_url"
+                        label="Original URL"
+                        placeholder="Original URL"
+                        variant="outlined"
+                        :rules="[requiredValidator]"
+                      />
+                    </VCol>
 
-                  <VTextField
-                    v-model="article.title"
-                    label="Title"
-                    variant="outlined"
-                    class="mb-3"
-                  />
-
-                  <VTextarea
-                    v-model="article.content"
-                    label="Content"
-                    variant="outlined"
-                    rows="3"
-                    class="mb-5"
-                  />
+                    <!--
+                      <VCol cols="6">
+                      <VueDatePicker
+                      v-model="article.published_at"
+                      :dark="global.name.value === 'dark'"
+                      :enable-time-picker="false"
+                      position="center"
+                      label="Published At"
+                      placeholder="Published At"
+                      auto-apply
+                      teleport
+                      time-picker-inline
+                      />
+                      </VCol>
+                    -->
+                  </VRow>
 
                   <div class="image-section">
                     <p class="text-subtitle-2 font-weight-bold mb-2">
@@ -326,7 +496,7 @@ watch(() => props.isVisible, newValue => {
                       class="image-list-section"
                     >
                       <Draggable
-                        v-model="videoForm.articles[articleIndex].images"
+                        v-model="newArticles[articleIndex].images"
                         item-key="name"
                         class="image-list-container"
                         @start="isDragging = true"

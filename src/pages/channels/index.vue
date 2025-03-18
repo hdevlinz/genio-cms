@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { ChannelList, ChannelViewModel } from '@/@db/app/channels/types'
+import type { ChannelList, ChannelViewModel } from '@/@db/apps/channels/types'
 import AddEditChannelDrawer from '@/views/apps/channels/AddEditChannelDrawer.vue'
 
 definePage({
@@ -22,7 +22,7 @@ const articleHeaders = [
   { title: 'Updated At', key: 'updated_at', sortable: true },
 ]
 
-const channels = ref<ChannelList>([])
+const channelList = ref<ChannelList>([])
 const totalChannels = ref(0)
 const channelPage = ref(1)
 const channelSize = ref(10)
@@ -36,7 +36,7 @@ const handleFetchChannels = async () => {
     return
   }
 
-  const { data } = await useApi<any>(createUrl('/news/channels', {
+  const { data } = await useApi<any>(createUrl('/channels', {
     query: {
       page: channelPage.value,
       size: channelSize.value,
@@ -45,7 +45,7 @@ const handleFetchChannels = async () => {
   }))
 
   if (data.value && data.value.items) {
-    channels.value = data.value.items.map((item: ChannelViewModel, index: number) => ({
+    channelList.value = data.value.items.map((item: ChannelViewModel, index: number) => ({
       ...item,
       index: (channelPage.value - 1) * channelSize.value + index + 1,
     }))
@@ -104,7 +104,7 @@ watch(() => isAddEditChannelDrawerVisible.value, val => {
           v-model:items-per-page="channelSize"
           v-model:page="channelPage"
           :headers="articleHeaders"
-          :items="channels"
+          :items="channelList"
           :items-length="totalChannels"
           class="text-no-wrap rounded-0"
           @click:row="handleClickChannel"

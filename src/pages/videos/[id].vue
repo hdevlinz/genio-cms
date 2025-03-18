@@ -1,9 +1,8 @@
 <script setup lang="ts">
 import download from 'downloadjs'
 
-import { VideoStatus } from '@/@db/app/videos/enums'
-import type { VideoDetail } from '@/@db/app/videos/types'
-import { VideoStatusMapping } from '@/@db/enums'
+import { VideoStatus, VideoStatusMapping } from '@/@db/apps/videos/enums'
+import type { VideoDetail } from '@/@db/apps/videos/types'
 
 definePage({
   meta: {
@@ -26,7 +25,7 @@ const handleFetchVideoDetail = async () => {
 
   isLoading.value = true
   try {
-    const { data } = await useApi<any>(createUrl(`/news/videos/${route.params.id}`))
+    const { data } = await useApi<any>(createUrl(`/videos/${route.params.id}`))
 
     if (data.value)
       videoDetail.value = data.value
@@ -37,10 +36,10 @@ const handleFetchVideoDetail = async () => {
 }
 
 const handleDownloadVideo = async () => {
-  if (videoDetail.value && videoDetail.value.result_video_url) {
+  if (videoDetail.value && videoDetail.value.video_url) {
     const fileName = videoDetail.value.title?.toLocaleLowerCase().replace(/[^a-z0-9]/gi, '_').replace(/_+$/, '') || 'video'
 
-    download(videoDetail.value.result_video_url, `${fileName}.mp4`, 'video/mp4')
+    download(videoDetail.value.video_url, `${fileName}.mp4`, 'video/mp4')
   }
 }
 
@@ -99,10 +98,10 @@ watch(() => route.params.id, handleFetchVideoDetail, { immediate: true })
 
               <VListItem class="list-item">
                 <VListItemTitle class="list-item-title">
-                  Channel
+                  Name
                 </VListItemTitle>
                 <VListItemSubtitle class="list-item-subtitle">
-                  {{ videoDetail.channel?.category || 'N/A' }}
+                  {{ videoDetail.name || 'N/A' }}
                 </VListItemSubtitle>
               </VListItem>
 
@@ -139,7 +138,7 @@ watch(() => route.params.id, handleFetchVideoDetail, { immediate: true })
               </VListItem>
 
               <VListItem
-                v-if="videoDetail.result_video_url"
+                v-if="videoDetail.video_url"
                 class="list-item"
               >
                 <VListItemTitle class="list-item-title">
@@ -147,12 +146,12 @@ watch(() => route.params.id, handleFetchVideoDetail, { immediate: true })
                 </VListItemTitle>
                 <VListItemSubtitle class="list-item-subtitle">
                   <a
-                    :href="videoDetail.result_video_url"
+                    :href="videoDetail.video_url"
                     target="_blank"
                     rel="noopener noreferrer"
                     class="video-url-link"
                   >
-                    {{ videoDetail.result_video_url }}
+                    {{ videoDetail.video_url }}
                     <VIcon
                       size="small"
                       icon="ri-external-link-line"
@@ -173,17 +172,17 @@ watch(() => route.params.id, handleFetchVideoDetail, { immediate: true })
 
             <div class="video-preview-container">
               <video
-                v-if="videoDetail.result_video_url"
+                v-if="videoDetail.video_url"
                 controls
                 class="video-preview"
-                :src="videoDetail.result_video_url"
+                :src="videoDetail.video_url"
               />
 
               <div
                 v-else
                 class="no-preview"
               >
-                <span>No video or image preview available</span>
+                <span>No video preview available</span>
               </div>
             </div>
           </VCol>
@@ -204,10 +203,6 @@ watch(() => route.params.id, handleFetchVideoDetail, { immediate: true })
           >
             <VCardItem>
               <VCardTitle class="article-card-title">
-                {{ article.title }}
-              </VCardTitle>
-
-              <VCardText class="article-card-text">
                 <a
                   :href="article.original_url"
                   target="_blank"
@@ -220,7 +215,7 @@ watch(() => route.params.id, handleFetchVideoDetail, { immediate: true })
                     icon="ri-external-link-line"
                   />
                 </a>
-              </VCardText>
+              </VCardTitle>
 
               <VCardText class="article-card-text">
                 {{ article.content }}

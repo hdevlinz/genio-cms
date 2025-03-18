@@ -8,6 +8,9 @@ declare global {
   const $api: typeof import('./src/utils/api')['$api']
   const COOKIE_MAX_AGE_1_YEAR: typeof import('./src/utils/constants')['COOKIE_MAX_AGE_1_YEAR']
   const EffectScope: typeof import('vue')['EffectScope']
+  const OrderByMapping: typeof import('./src/@db/enums')['OrderByMapping']
+  const VideoStatus: typeof import('./src/@db/apps/videos/enums')['VideoStatus']
+  const VideoStatusMapping: typeof import('./src/@db/apps/videos/enums')['VideoStatusMapping']
   const acceptHMRUpdate: typeof import('pinia')['acceptHMRUpdate']
   const alphaDashValidator: typeof import('./src/@core/utils/validators')['alphaDashValidator']
   const alphaValidator: typeof import('./src/@core/utils/validators')['alphaValidator']
@@ -54,6 +57,7 @@ declare global {
   const formatDateToMonthShort: typeof import('./src/@core/utils/formatters')['formatDateToMonthShort']
   const formatDateToTimeAgoString: typeof import('./src/@core/utils/formatters')['formatDateToTimeAgoString']
   const formatFileSize: typeof import('./src/@core/utils/formatters')['formatFileSize']
+  const formatNumber: typeof import('./src/@core/utils/formatters')['formatNumber']
   const getActivePinia: typeof import('pinia')['getActivePinia']
   const getCurrentInstance: typeof import('vue')['getCurrentInstance']
   const getCurrentScope: typeof import('vue')['getCurrentScope']
@@ -126,6 +130,8 @@ declare global {
   const refWithControl: typeof import('@vueuse/core')['refWithControl']
   const regexValidator: typeof import('./src/@core/utils/validators')['regexValidator']
   const registerPlugins: typeof import('./src/@core/utils/plugins')['registerPlugins']
+  const removeEmptyValues: typeof import('./src/utils/helper')['removeEmptyValues']
+  const removeNullishValues: typeof import('./src/utils/helper')['removeNullishValues']
   const requiredValidator: typeof import('./src/@core/utils/validators')['requiredValidator']
   const resolveComponent: typeof import('vue')['resolveComponent']
   const resolveRef: typeof import('@vueuse/core')['resolveRef']
@@ -418,6 +424,7 @@ declare module 'vue' {
     readonly formatDateToMonthShort: UnwrapRef<typeof import('./src/@core/utils/formatters')['formatDateToMonthShort']>
     readonly formatDateToTimeAgoString: UnwrapRef<typeof import('./src/@core/utils/formatters')['formatDateToTimeAgoString']>
     readonly formatFileSize: UnwrapRef<typeof import('./src/@core/utils/formatters')['formatFileSize']>
+    readonly formatNumber: UnwrapRef<typeof import('./src/@core/utils/formatters')['formatNumber']>
     readonly getActivePinia: UnwrapRef<typeof import('pinia')['getActivePinia']>
     readonly getCurrentInstance: UnwrapRef<typeof import('vue')['getCurrentInstance']>
     readonly getCurrentScope: UnwrapRef<typeof import('vue')['getCurrentScope']>
@@ -490,6 +497,7 @@ declare module 'vue' {
     readonly refWithControl: UnwrapRef<typeof import('@vueuse/core')['refWithControl']>
     readonly regexValidator: UnwrapRef<typeof import('./src/@core/utils/validators')['regexValidator']>
     readonly registerPlugins: UnwrapRef<typeof import('./src/@core/utils/plugins')['registerPlugins']>
+    readonly removeEmptyValues: UnwrapRef<typeof import('./src/utils/helper')['removeEmptyValues']>
     readonly requiredValidator: UnwrapRef<typeof import('./src/@core/utils/validators')['requiredValidator']>
     readonly resolveComponent: UnwrapRef<typeof import('vue')['resolveComponent']>
     readonly resolveRef: UnwrapRef<typeof import('@vueuse/core')['resolveRef']>
@@ -774,6 +782,7 @@ declare module '@vue/runtime-core' {
     readonly formatDateToMonthShort: UnwrapRef<typeof import('./src/@core/utils/formatters')['formatDateToMonthShort']>
     readonly formatDateToTimeAgoString: UnwrapRef<typeof import('./src/@core/utils/formatters')['formatDateToTimeAgoString']>
     readonly formatFileSize: UnwrapRef<typeof import('./src/@core/utils/formatters')['formatFileSize']>
+    readonly formatNumber: UnwrapRef<typeof import('./src/@core/utils/formatters')['formatNumber']>
     readonly getActivePinia: UnwrapRef<typeof import('pinia')['getActivePinia']>
     readonly getCurrentInstance: UnwrapRef<typeof import('vue')['getCurrentInstance']>
     readonly getCurrentScope: UnwrapRef<typeof import('vue')['getCurrentScope']>
@@ -846,6 +855,7 @@ declare module '@vue/runtime-core' {
     readonly refWithControl: UnwrapRef<typeof import('@vueuse/core')['refWithControl']>
     readonly regexValidator: UnwrapRef<typeof import('./src/@core/utils/validators')['regexValidator']>
     readonly registerPlugins: UnwrapRef<typeof import('./src/@core/utils/plugins')['registerPlugins']>
+    readonly removeEmptyValues: UnwrapRef<typeof import('./src/utils/helper')['removeEmptyValues']>
     readonly requiredValidator: UnwrapRef<typeof import('./src/@core/utils/validators')['requiredValidator']>
     readonly resolveComponent: UnwrapRef<typeof import('vue')['resolveComponent']>
     readonly resolveRef: UnwrapRef<typeof import('@vueuse/core')['resolveRef']>

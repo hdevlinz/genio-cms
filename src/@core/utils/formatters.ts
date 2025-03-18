@@ -81,6 +81,28 @@ export const formatDateToTimeAgoString = (value?: string | null) => {
   return `${formatDate(value)} (${dateToTimeAgoString(date)} ago)`
 }
 
+export function formatNumber(value: any): string {
+  if (value === undefined || value === null)
+    return '-'
+  if (typeof value === 'string') {
+    try {
+      value = Number.parseInt(value)
+    }
+    catch (e) {
+      return value
+    }
+  }
+
+  if (value >= 1_000_000_000)
+    return `${(value / 1_000_000_000).toFixed(1)}B`
+  else if (value >= 1_000_000)
+    return `${(value / 1_000_000).toFixed(2)}M`
+  else if (value >= 1_000)
+    return `${(value / 1_000).toFixed(2)}K`
+  else
+    return value.toString()
+}
+
 export const prefixWithPlus = (value: number) => value > 0 ? `+${value}` : value
 
 export const formatFileSize = (bytes: number, decimals = 2) => {

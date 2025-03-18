@@ -1,6 +1,7 @@
 <script setup lang="ts">
-import type { VideoList, VideoViewModel } from '@/@db/app/videos/types'
-import { VideoStatusMapping } from '@/@db/enums'
+import { VideoStatusMapping } from '@/@db/apps/videos/enums'
+import type { VideoList, VideoViewModel } from '@/@db/apps/videos/types'
+import { OrderByMapping } from '@/@db/enums'
 
 definePage({
   meta: {
@@ -17,17 +18,22 @@ const isAddVideoDialogVisible = ref(false)
 
 const videoHeaders = [
   { title: '#', key: 'index', sortable: false, width: '3.125rem' },
-  { title: 'Title', key: 'title', sortable: false },
-  { title: 'Description', key: 'description', sortable: false },
   { title: 'Status', key: 'status', sortable: false },
+  { title: 'Title', key: 'title', sortable: false },
+  { title: 'Name', key: 'name', sortable: false },
+  { title: 'Description', key: 'description', sortable: false },
+  { title: 'Duration', key: 'duration', sortable: false },
+  { title: 'Language', key: 'language', sortable: false },
+  { title: 'Topic', key: 'topic', sortable: false },
   { title: 'Created At', key: 'created_at', sortable: true },
   { title: 'Updated At', key: 'updated_at', sortable: true },
 ]
 
-const videos = ref<VideoList>([])
+const videoList = ref<VideoList>([])
 const totalVideos = ref(0)
 const videoPage = ref(1)
 const videoSize = ref(10)
+const videoOrderBy = ref('-created_at')
 const videoSearchQuery = ref('')
 const videoCancelNextFetch = ref(false)
 
@@ -38,16 +44,17 @@ const handleFetchVideos = async () => {
     return
   }
 
-  const { data } = await useApi<any>(createUrl('/news/videos', {
+  const { data } = await useApi<any>(createUrl('/videos', {
     query: {
       page: videoPage.value,
       size: videoSize.value,
+      order_by: videoOrderBy.value,
       search: videoSearchQuery.value,
     },
   }))
 
   if (data.value && data.value.items) {
-    videos.value = data.value.items.map((item: VideoViewModel, index: number) => ({
+    videoList.value = data.value.items.map((item: VideoViewModel, index: number) => ({
       ...item,
       index: (videoPage.value - 1) * videoSize.value + index + 1,
     }))
@@ -100,13 +107,30 @@ watch([videoPage, videoSize, videoSearchQuery], handleFetchVideos, { immediate: 
           v-model:items-per-page="videoSize"
           v-model:page="videoPage"
           :headers="videoHeaders"
-          :items="videos"
+          :items="videoList"
           :items-length="totalVideos"
           class="text-no-wrap rounded-0"
+          must-sort
           @click:row="handleClickVideo"
+          @update:sort-by="(event) => {
+            if (!isEmptyArray(event)) {
+              const { key, order } = event[0]
+              videoOrderBy = `${OrderByMapping[order as keyof typeof OrderByMapping]}${key}`
+            }
+          }"
         >
+          <template #item.status="{ item }">
+            <VChip :color="VideoStatusMapping[item.status].color">
+              {{ VideoStatusMapping[item.status].label }}
+            </VChip>
+          </template>
+
+          <template #item.duration="{ item }">
+            {{ formatNumber(item.duration) }}
+          </template>
+
           <template #item.description="{ item }">
-            {{ truncateString(item.description, 66) }}
+            {{ item.description ? truncateString(item.description, 66) : '-' }}
           </template>
 
           <template #item.created_at="{ item }">
@@ -115,12 +139,6 @@ watch([videoPage, videoSize, videoSearchQuery], handleFetchVideos, { immediate: 
 
           <template #item.updated_at="{ item }">
             {{ formatDateToTimeAgoString(item.updated_at) }}
-          </template>
-
-          <template #item.status="{ item }">
-            <VChip :color="VideoStatusMapping[item.status].color">
-              {{ VideoStatusMapping[item.status].label }}
-            </VChip>
           </template>
 
           <template #bottom>
@@ -164,7 +182,10 @@ watch([videoPage, videoSize, videoSearchQuery], handleFetchVideos, { immediate: 
       </vcardtext>
     </VCard>
 
-    <AddNewVideoDialog v-model:isVisible="isAddVideoDialogVisible" />
+    <AddNewVideoDialog
+      v-model:isVisible="isAddVideoDialogVisible"
+      @success="handleFetchVideos"
+    />
   </section>
 </template>
 

@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { Carousel, Navigation, Slide } from 'vue3-carousel'
 
-import type { ArticleDetail } from '@/@db/app/articles/types'
+import type { ArticleDetail } from '@/@db/apps/articles/types'
 
 definePage({
   meta: {
@@ -16,24 +16,6 @@ const router = useRouter()
 const route = useRoute('articles-id')
 
 const currentSlide = ref(0)
-
-const galleryConfig = {
-  itemsToShow: 1,
-  wrapAround: true,
-  slideEffect: 'fade' as const,
-  mouseDrag: false,
-  touchDrag: false,
-  height: 500,
-}
-
-const thumbnailsConfig = {
-  height: 100,
-  itemsToShow: 6,
-  wrapAround: true,
-  touchDrag: false,
-  gap: 10,
-}
-
 const isLoading = ref(false)
 const articleDetail = ref<ArticleDetail | null>(null)
 
@@ -43,7 +25,7 @@ const handleFetchArticleDetail = async () => {
 
   isLoading.value = true
   try {
-    const { data } = await useApi<any>(createUrl(`/news/articles/${route.params.id}`))
+    const { data } = await useApi<any>(createUrl(`/articles/${route.params.id}`))
 
     if (data.value)
       articleDetail.value = data.value
@@ -82,8 +64,8 @@ watch(() => route.params.id, handleFetchArticleDetail, { immediate: true })
         <VRow>
           <VCol cols="12">
             <VTextField
-              v-model="articleDetail.title"
-              label="Title"
+              v-model="articleDetail.original_url"
+              label="Original URL"
               variant="outlined"
               readonly
             />
@@ -99,44 +81,49 @@ watch(() => route.params.id, handleFetchArticleDetail, { immediate: true })
             />
           </VCol>
 
-          <VCol cols="12">
-            <VTextField
-              v-model="articleDetail.original_url"
-              label="Original URL"
-              variant="outlined"
-              readonly
-            />
-          </VCol>
-
           <VCol
-            v-if="articleDetail.images && articleDetail.images.length > 0"
+            v-if="articleDetail.image_urls && articleDetail.image_urls.length > 0"
             cols="12"
           >
             <div>Images</div>
             <Carousel
               id="gallery"
-              v-bind="galleryConfig"
+              v-bind="{
+                itemsToShow: 1,
+                wrapAround: true,
+                slideEffect: 'fade' as const,
+                mouseDrag: false,
+                touchDrag: false,
+                height: 500,
+              }"
               v-model="currentSlide"
             >
               <Slide
-                v-for="(image, index) in articleDetail.images"
+                v-for="(image, index) in articleDetail.image_urls"
                 :key="index"
               >
-                <img
+                <VImg
                   :src="image"
-                  alt="Article Image"
+                  cover
+                  alt="Article Gallery Image"
                   class="gallery-image"
-                >
+                />
               </Slide>
             </Carousel>
 
             <Carousel
               id="thumbnails"
-              v-bind="thumbnailsConfig"
+              v-bind="{
+                height: 100,
+                itemsToShow: 6,
+                wrapAround: true,
+                touchDrag: false,
+                gap: 10,
+              }"
               v-model="currentSlide"
             >
               <Slide
-                v-for="(image, index) in articleDetail.images"
+                v-for="(image, index) in articleDetail.image_urls"
                 :key="index"
               >
                 <template #default="{ currentIndex, isActive }">
@@ -145,11 +132,12 @@ watch(() => route.params.id, handleFetchArticleDetail, { immediate: true })
                     :class="[{ 'is-active': isActive }]"
                     @click="slideTo(currentIndex)"
                   >
-                    <img
+                    <VImg
                       :src="image"
-                      alt="Article Image"
+                      cover
+                      alt="Article Thumbnail Image"
                       class="thumbnail-image"
-                    >
+                    />
                   </div>
                 </template>
               </Slide>
@@ -158,24 +146,6 @@ watch(() => route.params.id, handleFetchArticleDetail, { immediate: true })
                 <Navigation />
               </template>
             </Carousel>
-          </VCol>
-
-          <VCol cols="12">
-            <div>Related URLs</div>
-            <ul>
-              <li
-                v-for="(url, index) in articleDetail.related_urls"
-                :key="index"
-              >
-                <a
-                  :href="url"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                >
-                  {{ url }}
-                </a>
-              </li>
-            </ul>
           </VCol>
         </VRow>
       </VCardText>

@@ -18,6 +18,28 @@ export const paginationMeta = <T extends { page: number; itemsPerPage: number }>
   return `${total === 0 ? 0 : start} - ${end} of ${total}`
 }
 
+export const removeEmptyValues = (obj: any): any => {
+  if (obj === null || obj === undefined || obj === '')
+    return undefined
+
+  if (typeof obj !== 'object')
+    return obj
+
+  if (Array.isArray(obj))
+    return obj.map(removeEmptyValues).filter(v => v !== undefined)
+
+  const newObj: { [key: string]: any } = {}
+  for (const key in obj) {
+    if (Object.hasOwnProperty.call(obj, key)) {
+      const value = removeEmptyValues(obj[key])
+      if (value !== undefined)
+        newObj[key] = value
+    }
+  }
+
+  return Object.keys(newObj).length > 0 ? newObj : undefined
+}
+
 export const setAuthCookies = (ability: MongoAbility<[Actions, Subjects], MongoQuery>, res: any) => {
   ability.update(res.ability_rules)
 

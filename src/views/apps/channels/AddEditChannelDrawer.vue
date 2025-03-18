@@ -3,7 +3,7 @@ import { PerfectScrollbar } from 'vue3-perfect-scrollbar'
 import { toast } from 'vue3-toastify'
 import { VForm } from 'vuetify/components/VForm'
 
-import type { ChannelViewModel, CreateChannel } from '@/@db/app/channels/types'
+import type { ChannelViewModel, CreateChannel } from '@/@db/apps/channels/types'
 
 interface Props {
   isDrawerOpen: boolean
@@ -47,7 +47,7 @@ const onSubmit = () => {
     if (!valid)
       return
 
-    let endpoint = '/news/channels'
+    let endpoint = '/channels'
     endpoint = isEdit.value ? `${endpoint}/${props.itemData?.id}` : endpoint
 
     const { response } = await useApi(createUrl(endpoint))[isEdit.value ? 'put' : 'post'](form.value)
